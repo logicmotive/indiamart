@@ -36,6 +36,7 @@ def sync_india_mart_lead(from_date, to_date):
         res = requests.post(url=req)
 
         if res.text:
+            frappe.msgprint(_("URL Response: {0}").format(res.text), raise_exception=True)
             count = 0
             for row in json.loads(res.text):
                 if not row.get("Error_Message") == None:
