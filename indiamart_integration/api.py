@@ -51,7 +51,8 @@ def sync_india_mart_lead(from_date,to_date):
 		frappe.log_error(frappe.get_traceback(), _("India Mart Sync Error"))
 
 def get_request_url(india_mart_setting):
-	req = str(india_mart_setting.url)+'GLUSR_MOBILE/'+str(india_mart_setting.mobile)+'/GLUSR_MOBILE_KEY/'+str(india_mart_setting.key)+'/Start_Time/'+str(india_mart_setting.from_date)+'/End_Time/'+str(india_mart_setting.to_date)+'/'
+#	req = str(india_mart_setting.url)+'GLUSR_MOBILE/'+str(india_mart_setting.mobile)+'/GLUSR_MOBILE_KEY/'+str(india_mart_setting.key)+'/Start_Time/'+str(india_mart_setting.from_date)+'/End_Time/'+str(india_mart_setting.to_date)+'/'
+	req = str(india_mart_setting.url)+'glusr_crm_key'+str(india_mart_setting.key)+'&start_time'+str(india_mart_setting.from_date)+'&end_time'+str(india_mart_setting.to_date)
 	return req
 
 @frappe.whitelist()
