@@ -68,11 +68,11 @@ def add_lead(lead_data):
 		if not frappe.db.exists("Lead",{"india_mart_id":lead_data["QUERY_ID"]}):
 			doc = frappe.get_doc(dict(
 				doctype="Lead",
-				lead_name=lead_data["SENDERNAME"],
-				email_address=lead_data["SENDEREMAIL"],
-				phone=lead_data["MOB"],
-				requirement=lead_data["SUBJECT"],
-				india_mart_id=lead_data["QUERY_ID"],
+				first_name=lead_data["SENDER_NAME"],
+				email_id=lead_data["SENDER_EMAIL"],
+				mobile_no=lead_data["SENDER_MOBILE"],
+#				requirement=lead_data["SUBJECT"],
+				job_title=lead_data["UNIQUE_QUERY_ID"],
 				source="India Mart"           
 			)).insert(ignore_permissions = True)
 			return doc
