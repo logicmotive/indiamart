@@ -53,7 +53,7 @@ def sync_india_mart_lead(from_date, to_date):
 
 def get_request_url(india_mart_setting, from_date, to_date):
    req = str(india_mart_setting.url)+'glusr_crm_key='+str(india_mart_setting.key)+'&start_time='+str(india_mart_setting.from_date)+'&end_time='+str(india_mart_setting.to_date)
-  return req
+   return req
 
 @frappe.whitelist()
 def cron_sync_lead():
