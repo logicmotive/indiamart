@@ -28,12 +28,13 @@ def sync_india_mart_lead(from_date, to_date):
         india_mart_setting = frappe.get_doc("IndiaMart Setting", "IndiaMart Setting")  
         if not (india_mart_setting.url and india_mart_setting.mobile and india_mart_setting.key):  
             frappe.throw(  
-                msg=_('URL, Mobile, Key mandatory for Indiamart API Call. Please set them and try again.'),  
+                msg=_('URL, , Key mandatory for Indiamart API Call. Please set them and try again.'),  
                 title=_('Missing Setting Fields')  
             )
 
         req = get_request_url(india_mart_setting, from_date, to_date)  
         res = requests.post(url=req)
+        
 
         if res.text:  
             frappe.msgprint(_("URL Response: {0}").format(res.text), raise_exception=True)  
