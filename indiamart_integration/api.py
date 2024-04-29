@@ -35,7 +35,7 @@ def sync_india_mart_lead(from_date, to_date):
         req = get_request_url(india_mart_setting, from_date, to_date)  
         res = requests.post(url=req)
         
-
+            frappe.msgprint(_("URL Response: {0}").format(res.text), raise_exception=True)
         if res.text:  
             frappe.msgprint(_("URL Response: {0}").format(res.text), raise_exception=True)  
             count = 0  
