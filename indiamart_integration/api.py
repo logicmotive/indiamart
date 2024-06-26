@@ -71,7 +71,7 @@ def add_lead(lead_data):
                 "mobile_no": lead_data("SENDER_MOBILE"),
                 "job_title": lead_data("UNIQUE_QUERY_ID"),
                 "source": "India Mart",
-                "custom_indiamart_id": lead_data["UNIQUE_QUERY_ID"]
+                "custom_indiamart_id": lead_data("UNIQUE_QUERY_ID")
             }).insert(ignore_permissions=True)
             return doc
     except Exception as e:
