@@ -21,7 +21,7 @@ def add_source_lead():
 def sync_india_mart_lead(from_date, to_date):
     try:
         india_mart_setting = frappe.get_doc("IndiaMart Setting", "IndiaMart Setting")
-        if not (india_mart_setting.url and india_mart_setting.mobile and india_mart_setting.key):
+        if not (india_mart_setting.url and india_mart_setting.mobile_no and india_mart_setting.key):
             frappe.throw(
                 msg=_('URL, Mobile, Key mandatory for Indiamart API Call. Please set them and try again.'),
                 title=_('Missing Setting Fields')
