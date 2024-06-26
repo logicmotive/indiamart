@@ -63,7 +63,7 @@ def cron_sync_lead():
 @frappe.whitelist()
 def add_lead(lead_data):
     try:
-        if not frappe.db.exists("Lead", {"india_mart_id": lead_data["QUERY_ID"]}):
+        if not frappe.db.exists("Lead", {"custom_indiamart_id": lead_data["UNIQUE_QUERY_ID"]}):
             doc = frappe.get_doc({
                 "doctype": "Lead",
                 "first_name": lead_data("SENDER_NAME"),
