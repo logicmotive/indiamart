@@ -66,12 +66,12 @@ def add_lead(lead_data):
         if not frappe.db.exists("Lead", {"india_mart_id": lead_data["QUERY_ID"]}):
             doc = frappe.get_doc({
                 "doctype": "Lead",
-                "first_name": lead_data["SENDER_NAME"],
+                "first_name": lead_data("SENDER_NAME"),
                 "email_id": lead_data.get("SENDER_EMAIL", ""),
-                "mobile_no": lead_data["SENDER_MOBILE"],
-                "job_title": lead_data["UNIQUE_QUERY_ID"],
+                "mobile_no": lead_data("SENDER_MOBILE"),
+                "job_title": lead_data("UNIQUE_QUERY_ID"),
                 "source": "India Mart",
-                "custom_indiamart_id": lead_data["QUERY_ID"]
+                "custom_indiamart_id": lead_data["UNIQUE_QUERY_ID"]
             }).insert(ignore_permissions=True)
             return doc
     except Exception as e:
