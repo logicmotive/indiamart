@@ -34,7 +34,7 @@ def sync_india_mart_lead(from_date, to_date):
             count = 0
             for row in json.loads(res.text):
                 if "Error_Message" in row:
-                    frappe.throw(row["Error_Message"])
+                    frappe.throw(row("Error_Message"))
                 else:
                     doc = add_lead(row)
                     if doc:
@@ -63,7 +63,7 @@ def cron_sync_lead():
 @frappe.whitelist()
 def add_lead(lead_data):
     try:
-        if not frappe.db.exists("Lead", {"custom_indiamart_id": lead_data["UNIQUE_QUERY_ID"]}):
+        if not frappe.db.exists("Lead", {"custom_indiamart_id": lead_data("UNIQUE_QUERY_ID")}):
             doc = frappe.get_doc({
                 "doctype": "Lead",
                 "first_name": lead_data("SENDER_NAME"),
