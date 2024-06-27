@@ -50,8 +50,14 @@ def sync_india_mart_lead(from_date, to_date):
                 break  # If we didn't get a 429 or other error, break out of the retry loop
         
         if res.text:
-            response_data = json.loads(res.text)
-            
+            try:
+                response_data = json.loads(res.text)
+            except json.JSONDecodeError:
+                frappe.msgprint(_("Failed to parse API response as JSON. Raw response: {}").format(res.text[:1000]))
+                return
+
+            frappe.msgprint(_("API Response: {}").format(json.dumps(response_data, indent=2)))
+
             if isinstance(response_data, dict):
                 if response_data.get("CODE") == 429:
                     frappe.msgprint(_("Rate limit exceeded. Please try again later."))
@@ -59,8 +65,11 @@ def sync_india_mart_lead(from_date, to_date):
                 elif "Error_Message" in response_data:
                     frappe.throw(response_data["Error_Message"])
                 else:
-                    frappe.msgprint(_("Unexpected response format from API"))
+                    frappe.msgprint(_("Response is a dictionary, expected a list. Response: {}").format(json.dumps(response_data, indent=2)))
                     return
+            elif not isinstance(response_data, list):
+                frappe.msgprint(_("Unexpected response type. Expected list, got {}. Response: {}").format(type(response_data), json.dumps(response_data, indent=2)))
+                return
             
             frappe.msgprint(_("Total records received: {}").format(len(response_data)))
             
@@ -78,6 +87,8 @@ def sync_india_mart_lead(from_date, to_date):
                     else:
                         leads_failed += 1
                         frappe.msgprint(_("Failed to add lead: {}").format(row.get('UNIQUE_QUERY_ID', 'Unknown ID')))
+                else:
+                    frappe.msgprint(_("Unexpected row type. Expected dict, got {}. Row: {}").format(type(row), row))
             
             frappe.msgprint(_("Sync Results:\nCreated: {}\nAlready Existing: {}\nFailed: {}").format(
                 leads_created, leads_existing, leads_failed))
