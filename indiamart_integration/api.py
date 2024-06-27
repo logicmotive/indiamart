@@ -1,6 +1,6 @@
 from __future__ import unicode_literals
 import frappe
-from frappe import throw, msgprint, _
+from frappe import throw, _
 from datetime import date
 import json
 import requests
@@ -14,19 +14,17 @@ def add_source_lead():
             "source_name": "India Mart"
         }).insert(ignore_permissions=True)
         if doc:
-            frappe.msgprint(_("Lead Source Added For India Mart"))
+            return "Lead Source Added For India Mart"
     else:
-        frappe.msgprint(_("India Mart Lead Source Already Available"))
+        return "India Mart Lead Source Already Available"
 
 @frappe.whitelist()
 def sync_india_mart_lead(from_date, to_date):
     try:
         india_mart_setting = frappe.get_doc("IndiaMart Setting", "IndiaMart Setting")
         if not (india_mart_setting.url and india_mart_setting.mobile_no and india_mart_setting.key):
-            frappe.throw(
-                msg=_('URL, Mobile, Key mandatory for Indiamart API Call. Please set them and try again.'),
-                title=_('Missing Setting Fields')
-            )
+            throw(_('URL, Mobile, Key mandatory for Indiamart API Call. Please set them and try again.'))
+        
         req = get_request_url(india_mart_setting, from_date, to_date)
         
         max_retries = 3
@@ -37,37 +35,35 @@ def sync_india_mart_lead(from_date, to_date):
             
             if res.status_code == 429:
                 if attempt < max_retries - 1:
-                    frappe.msgprint(_("Rate limit exceeded. Retrying in {} seconds...").format(retry_delay))
                     time.sleep(retry_delay)
                     retry_delay *= 2  # Exponential backoff
                 else:
-                    frappe.msgprint(_("Rate limit exceeded. Please try again later."))
-                    return
+                    return "Rate limit exceeded. Please try again later."
             else:
                 break  # If we didn't get a 429, break out of the retry loop
         
         if res.text:
-            frappe.msgprint(_("URL Response: {0}").format(res.text))
             response_data = json.loads(res.text)
             
             if isinstance(response_data, dict) and response_data.get("CODE") == 429:
-                frappe.msgprint(_("Rate limit exceeded. Please try again later."))
-                return
+                return "Rate limit exceeded. Please try again later."
             
-            count = 0
+            leads_created = 0
             for row in response_data:
                 if isinstance(row, dict):
                     if "Error_Message" in row:
-                        frappe.throw(row["Error_Message"])
+                        throw(row["Error_Message"])
                     else:
-                        doc = add_lead(row)
-                        if doc:
-                            count += 1
-            if count > 0:
-                frappe.msgprint(_("{0} Lead(s) Created").format(count))
+                        if add_lead(row):
+                            leads_created += 1
+            
+            if leads_created > 0:
+                return f"You have successfully added {leads_created} Lead(s)"
+            else:
+                return "No new leads were added"
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), _("India Mart Sync Error"))
-        raise
+        throw(_("An error occurred while syncing leads. Please check the error log."))
 
 def get_request_url(india_mart_setting, from_date, to_date):
     return (f"{india_mart_setting.url}?"
@@ -79,12 +75,11 @@ def get_request_url(india_mart_setting, from_date, to_date):
 def cron_sync_lead():
     try:
         today = frappe.utils.today()
-        sync_india_mart_lead(today, today)
+        return sync_india_mart_lead(today, today)
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), _("India Mart Sync Error"))
-        raise
+        throw(_("An error occurred during cron sync. Please check the error log."))
 
-@frappe.whitelist()
 def add_lead(lead_data):
     try:
         if not frappe.db.exists("Lead", {"custom_indiamart_id": lead_data["UNIQUE_QUERY_ID"]}):
@@ -93,11 +88,14 @@ def add_lead(lead_data):
                 "first_name": lead_data["SENDER_NAME"],
                 "email_id": lead_data.get("SENDER_EMAIL", ""),
                 "mobile_no": lead_data["SENDER_MOBILE"],
-                "job_title": lead_data["UNIQUE_QUERY_ID"],
+                "lead_name": lead_data["SENDER_NAME"],
+                "company_name": lead_data.get("SENDER_COMPANY", ""),
                 "source": "India Mart",
-                "custom_indiamart_id": lead_data["UNIQUE_QUERY_ID"]
+                "custom_indiamart_id": lead_data["UNIQUE_QUERY_ID"],
+                "notes": lead_data.get("QUERY_MESSAGE", "")
             }).insert(ignore_permissions=True)
-            return doc
+            return True
+        return False
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), _("Error adding lead from India Mart"))
-        raise
+        return False
