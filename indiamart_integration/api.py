@@ -139,6 +139,7 @@ def add_lead(lead_data):
                 "first_name": lead_data["SENDER_NAME"],
                 "mobile_no": lead_data["SENDER_MOBILE"],
                 "company_name": lead_data.get("SENDER_COMPANY", ""),
+                "status": "Lead",
                 "source": "India Mart",
                 "custom_indiamart_id": lead_data["UNIQUE_QUERY_ID"]
             })
