@@ -1,23 +1,3 @@
-from __future__ import unicode_literals
-import frappe
-from frappe import throw, msgprint, _
-from datetime import date
-import json
-import requests
-import time
-
-@frappe.whitelist()
-def add_source_lead():
-    if not frappe.db.exists("Lead Source", "India Mart"):
-        doc = frappe.get_doc({
-            "doctype": "Lead Source",
-            "source_name": "India Mart"
-        }).insert(ignore_permissions=True)
-        if doc:
-            frappe.msgprint(_("Lead Source Added For India Mart"))
-    else:
-        frappe.msgprint(_("India Mart Lead Source Already Available"))
-
 @frappe.whitelist()
 def sync_india_mart_lead(from_date, to_date):
     try:
@@ -63,23 +43,6 @@ def sync_india_mart_lead(from_date, to_date):
                         doc = add_lead(row)
                         if doc:
                             count += 1
-            if count > 0:
-                frappe.msgprint(_("{0} Lead(s) Created").format(count))
-    except Exception as e:
-        frappe.log_error(frappe.get_traceback(), _("India Mart Sync Error"))
-        raise
-
-def get_request_url(india_mart_setting, from_date, to_date):
-    return (f"{india_mart_setting.url}?"
-            f"glusr_crm_key={india_mart_setting.key}&"
-            f"start_time={from_date}&"
-            f"end_time={to_date}")
-
-@frappe.whitelist()
-def cron_sync_lead():
-    try:
-        today = frappe.utils.today()
-        sync_india_mart_lead(today, today)
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), _("India Mart Sync Error"))
         raise
