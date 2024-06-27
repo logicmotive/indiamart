@@ -43,32 +43,48 @@ def sync_india_mart_lead(from_date, to_date):
                 else:
                     frappe.msgprint(_("Rate limit exceeded. Please try again later."))
                     return
+            elif res.status_code != 200:
+                frappe.msgprint(_("API request failed with status code: {}").format(res.status_code))
+                return
             else:
-                break  # If we didn't get a 429, break out of the retry loop
+                break  # If we didn't get a 429 or other error, break out of the retry loop
         
         if res.text:
             response_data = json.loads(res.text)
             
-            if isinstance(response_data, dict) and response_data.get("CODE") == 429:
-                frappe.msgprint(_("Rate limit exceeded. Please try again later."))
-                return
+            if isinstance(response_data, dict):
+                if response_data.get("CODE") == 429:
+                    frappe.msgprint(_("Rate limit exceeded. Please try again later."))
+                    return
+                elif "Error_Message" in response_data:
+                    frappe.throw(response_data["Error_Message"])
+                else:
+                    frappe.msgprint(_("Unexpected response format from API"))
+                    return
+            
+            frappe.msgprint(_("Total records received: {}").format(len(response_data)))
             
             leads_created = 0
+            leads_existing = 0
+            leads_failed = 0
+            
             for row in response_data:
                 if isinstance(row, dict):
-                    if "Error_Message" in row:
-                        frappe.throw(row["Error_Message"])
+                    result = add_lead(row)
+                    if result == True:
+                        leads_created += 1
+                    elif result == "EXISTS":
+                        leads_existing += 1
                     else:
-                        if add_lead(row):
-                            leads_created += 1
+                        leads_failed += 1
+                        frappe.msgprint(_("Failed to add lead: {}").format(row.get('UNIQUE_QUERY_ID', 'Unknown ID')))
             
-            if leads_created > 0:
-                frappe.msgprint(_("You have successfully added {0} Lead(s)").format(leads_created))
-            else:
-                frappe.msgprint(_("No new leads were added"))
+            frappe.msgprint(_("Sync Results:\nCreated: {}\nAlready Existing: {}\nFailed: {}").format(
+                leads_created, leads_existing, leads_failed))
+            
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), _("India Mart Sync Error"))
-        frappe.throw(_("An error occurred while syncing leads. Please check the error log."))
+        frappe.throw(_("An error occurred while syncing leads: {}").format(str(e)))
 
 def get_request_url(india_mart_setting, from_date, to_date):
     return (f"{india_mart_setting.url}?"
@@ -95,9 +111,11 @@ def add_lead(lead_data):
                 "company_name": lead_data.get("SENDER_COMPANY", ""),
                 "source": "India Mart",
                 "custom_indiamart_id": lead_data["UNIQUE_QUERY_ID"]
-            }).insert(ignore_permissions=True)
+            })
+            doc.insert(ignore_permissions=True)
+            frappe.db.commit()  # Commit the transaction
             return True
-        return False
+        return "EXISTS"
     except Exception as e:
-        frappe.log_error(frappe.get_traceback(), _("Error adding lead from India Mart"))
+        frappe.log_error(frappe.get_traceback(), _("Error adding lead from India Mart: {}").format(str(e)))
         return False
