@@ -47,18 +47,24 @@ def sync_india_mart_lead(from_date, to_date):
                 break  # If we didn't get a 429, break out of the retry loop
         
         if res.text:
+            frappe.msgprint(_("URL Response: {0}").format(res.text))
             response_data = json.loads(res.text)
             
             if isinstance(response_data, dict) and response_data.get("CODE") == 429:
                 frappe.msgprint(_("Rate limit exceeded. Please try again later."))
                 return
             
+            count = 0
             for row in response_data:
                 if isinstance(row, dict):
                     if "Error_Message" in row:
                         frappe.throw(row["Error_Message"])
                     else:
-                        add_lead(row)
+                        doc = add_lead(row)
+                        if doc:
+                            count += 1
+            if count > 0:
+                frappe.msgprint(_("{0} Lead(s) Created").format(count))
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), _("India Mart Sync Error"))
         raise
