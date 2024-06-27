@@ -131,25 +131,19 @@ def cron_sync_lead():
 #         frappe.log_error(frappe.get_traceback(), _("Error adding lead from India Mart: {}").format(str(e)))
 #         return False
 def add_lead(lead_data):
-    try:
-        if not frappe.db.exists("Lead", {"custom_indiamart_id": lead_data["UNIQUE_QUERY_ID"]}):
-            frappe.logger().info(f"Attempting to create lead with ID: {lead_data['UNIQUE_QUERY_ID']}")
-            doc = frappe.get_doc({
-                "doctype": "Lead",
-                "first_name": lead_data["SENDER_NAME"],
-                "mobile_no": lead_data["SENDER_MOBILE"],
-                "company_name": lead_data.get("SENDER_COMPANY", ""),
-                "status": "Lead",
-                "source": "India Mart",
-                "custom_indiamart_id": lead_data["UNIQUE_QUERY_ID"]
-            })
-            doc.insert(ignore_permissions=True)
-            frappe.db.commit()
-            frappe.logger().info(f"Successfully created lead with ID: {lead_data['UNIQUE_QUERY_ID']}")
-            return True
-        else:
-            frappe.logger().info(f"Lead already exists with ID: {lead_data['UNIQUE_QUERY_ID']}")
-        return "EXISTS"
+    if not frappe.db.exists("Lead", {"custom_indiamart_id": lead_data["UNIQUE_QUERY_ID"]}):
+        doc = frappe.get_doc({
+            "doctype": "Lead",
+            "first_name": lead_data["SENDER_NAME"],
+            "mobile_no": lead_data["SENDER_MOBILE"],
+            "company_name": lead_data.get("SENDER_COMPANY", ""),
+            "source": "India Mart",
+            "custom_indiamart_id": lead_data["UNIQUE_QUERY_ID"]
+        })
+        doc.insert(ignore_permissions=True)
+        frappe.db.commit()
+        return True
+    return "EXISTS"
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), _("Error adding lead from India Mart: {}").format(str(e)))
         frappe.logger().error(f"Failed to create lead with ID: {lead_data.get('UNIQUE_QUERY_ID', 'Unknown')}. Error: {str(e)}")
