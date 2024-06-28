@@ -129,15 +129,7 @@ def add_lead(lead_data):
                 "email_id": lead_data["SENDER_EMAIL"],
                 "company_name": lead_data.get("SENDER_COMPANY", ""),
                 "source": "India Mart",
-                "custom_indiamart_id": lead_data["UNIQUE_QUERY_ID"],
-                "address_line1": lead_data.get("SENDER_ADDRESS", ""),
-                "city": lead_data.get("SENDER_CITY", ""),
-                "state": lead_data.get("SENDER_STATE", ""),
-                "country": lead_data.get("SENDER_COUNTRY_ISO", ""),
-                "pincode": lead_data.get("SENDER_PINCODE", ""),
-                "custom_product_name": lead_data.get("QUERY_PRODUCT_NAME", ""),
-                "custom_query_message": lead_data.get("QUERY_MESSAGE", ""),
-                "custom_query_time": lead_data.get("QUERY_TIME", "")
+                "custom_indiamart_id": lead_data["UNIQUE_QUERY_ID"]
             })
             doc.insert()
             frappe.db.commit()
