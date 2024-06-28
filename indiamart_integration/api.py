@@ -60,37 +60,38 @@ def sync_india_mart_lead(from_date, to_date):
                 frappe.log_error(f"Raw response: {res.text[:1000]}", "India Mart API Response Error")
                 return
 
-            if isinstance(response_data, dict):
-                if response_data.get("CODE") == 429:
-                    frappe.msgprint(_("Rate limit exceeded. Please try again later."))
-                    return
-                elif "Error_Message" in response_data:
-                    frappe.throw(response_data["Error_Message"])
-                else:
-                    frappe.msgprint(_("Response is a dictionary, expected a list."))
-                    frappe.log_error(f"Unexpected response: {json.dumps(response_data, indent=2)}", "India Mart API Response Error")
-                    return
-            elif not isinstance(response_data, list):
-                frappe.msgprint(_("Unexpected response type. Expected list."))
+            if not isinstance(response_data, dict):
+                frappe.msgprint(_("Unexpected response type. Expected dict."))
                 frappe.log_error(f"Unexpected response type: {type(response_data)}. Response: {json.dumps(response_data, indent=2)}", "India Mart API Response Error")
                 return
+
+            if response_data.get("CODE") != 200:
+                frappe.msgprint(_("API returned non-success code: {}").format(response_data.get("CODE")))
+                frappe.log_error(f"API Error: {response_data.get('MESSAGE', 'No message provided')}", "India Mart API Error")
+                return
+
+            leads_data = response_data.get("RESPONSE", [])
+            if not isinstance(leads_data, list):
+                frappe.msgprint(_("Unexpected RESPONSE type. Expected list."))
+                frappe.log_error(f"Unexpected RESPONSE type: {type(leads_data)}. RESPONSE: {json.dumps(leads_data, indent=2)}", "India Mart API Response Error")
+                return
+
+            total_records = response_data.get("TOTAL_RECORDS", 0)
+            frappe.msgprint(_("Total records received: {}").format(total_records))
             
             leads_created = 0
             leads_existing = 0
             leads_failed = 0
             
-            for row in response_data:
-                if isinstance(row, dict):
-                    result = add_lead(row)
-                    if result == True:
-                        leads_created += 1
-                    elif result == "EXISTS":
-                        leads_existing += 1
-                    else:
-                        leads_failed += 1
-                        frappe.log_error(f"Failed to add lead: {row.get('UNIQUE_QUERY_ID', 'Unknown ID')}", "India Mart Lead Creation Error")
+            for lead in leads_data:
+                result = add_lead(lead)
+                if result == True:
+                    leads_created += 1
+                elif result == "EXISTS":
+                    leads_existing += 1
                 else:
-                    frappe.log_error(f"Unexpected row type: {type(row)}. Row: {row}", "India Mart API Response Error")
+                    leads_failed += 1
+                    frappe.log_error(f"Failed to add lead: {lead.get('UNIQUE_QUERY_ID', 'Unknown ID')}", "India Mart Lead Creation Error")
             
             frappe.msgprint(_("Sync Results:\nCreated: {}\nAlready Existing: {}\nFailed: {}").format(
                 leads_created, leads_existing, leads_failed))
@@ -125,9 +126,18 @@ def add_lead(lead_data):
                 "doctype": "Lead",
                 "first_name": lead_data["SENDER_NAME"],
                 "mobile_no": lead_data["SENDER_MOBILE"],
+                "email_id": lead_data["SENDER_EMAIL"],
                 "company_name": lead_data.get("SENDER_COMPANY", ""),
                 "source": "India Mart",
-                "custom_indiamart_id": lead_data["UNIQUE_QUERY_ID"]
+                "custom_indiamart_id": lead_data["UNIQUE_QUERY_ID"],
+                "address_line1": lead_data.get("SENDER_ADDRESS", ""),
+                "city": lead_data.get("SENDER_CITY", ""),
+                "state": lead_data.get("SENDER_STATE", ""),
+                "country": lead_data.get("SENDER_COUNTRY_ISO", ""),
+                "pincode": lead_data.get("SENDER_PINCODE", ""),
+                "custom_product_name": lead_data.get("QUERY_PRODUCT_NAME", ""),
+                "custom_query_message": lead_data.get("QUERY_MESSAGE", ""),
+                "custom_query_time": lead_data.get("QUERY_TIME", "")
             })
             doc.insert()
             frappe.db.commit()
