@@ -126,6 +126,7 @@ def add_lead(lead_data):
                 "doctype": "Lead",
                 "first_name": lead_data["SENDER_NAME"],
                 "mobile_no": lead_data["SENDER_MOBILE"],
+                "custom_lead_generated_time": lead_data["QUERY_TIME"],
                 "custom_receiver_mobile_no": lead_data["RECEIVER_MOBILE"],
                 "email_id": lead_data["SENDER_EMAIL"],
                 "company_name": lead_data.get("SENDER_COMPANY", ""),
